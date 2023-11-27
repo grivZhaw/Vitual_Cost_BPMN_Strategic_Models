@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_118g1zs" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="4.12.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.15.0">
+  <bpmn:collaboration id="Collaboration_10633ri">
+    <bpmn:participant id="Participant_CP" name="Cost Process" processRef="Process_CostProcess" />
+    <bpmn:participant id="Participant_MCT" name="Maintain Cost Table" processRef="Process_MaintainCostTable" />
+    <bpmn:participant id="Participant_PCT" name="Populate Cost Table" processRef="Process_PopulateCostTable" />
+    <bpmn:messageFlow id="Flow_0tq302g" sourceRef="Activity_Start_PCT_CP" targetRef="Participant_PCT" />
+    <bpmn:messageFlow id="Flow_0tgvke5" sourceRef="Activity_StartMCT_CP" targetRef="Participant_MCT" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_CostProcess" isExecutable="false">
+    <bpmn:exclusiveGateway id="Gateway_Sd_CP" name="Shutdown signal received?">
+      <bpmn:incoming>Flow_0udljyh</bpmn:incoming>
+      <bpmn:outgoing>Flow_YES_Sd_CP</bpmn:outgoing>
+      <bpmn:outgoing>Flow_NO_Sd_CP</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:startEvent id="Event_Start_CP" name="Start">
+      <bpmn:extensionElements>
+        <camunda:executionListener event="end">
+          <camunda:script scriptFormat="groovy">shutdown = false
+execution.setVariable("shutdown", shutdown);</camunda:script>
+        </camunda:executionListener>
+      </bpmn:extensionElements>
+      <bpmn:outgoing>Flow_0rv4t7o</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="Activity_StartMCT_CP" name="Start Maintain Cost Table">
+      <bpmn:extensionElements>
+        <camunda:executionListener expression="${costProcess.initVar(execution)}" event="end" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0rv4t7o</bpmn:incoming>
+      <bpmn:outgoing>Flow_169m2s2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_Start_PCT_CP" name="Start Populate Cost Table">
+      <bpmn:incoming>Flow_NO_Sd_CP</bpmn:incoming>
+      <bpmn:incoming>Flow_169m2s2</bpmn:incoming>
+      <bpmn:outgoing>Flow_0u05c1g</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_CheckNwOrder_CP" name="Wait an order is Done">
+      <bpmn:incoming>Flow_0u05c1g</bpmn:incoming>
+      <bpmn:outgoing>Flow_1vz1pnq</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gateway_0dxj7oo" name="More Order?">
+      <bpmn:incoming>Flow_0khtpu7</bpmn:incoming>
+      <bpmn:outgoing>Flow_0udljyh</bpmn:outgoing>
+      <bpmn:outgoing>Flow_1idzmsq</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="Event_End_CP" name="End">
+      <bpmn:incoming>Flow_YES_Sd_CP</bpmn:incoming>
+      <bpmn:terminateEventDefinition id="TerminateEventDefinition_1ooub96" />
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_YES_Sd_CP" name="Yes" sourceRef="Gateway_Sd_CP" targetRef="Event_End_CP">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="groovy">shutdown == true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_0udljyh" name="No" sourceRef="Gateway_0dxj7oo" targetRef="Gateway_Sd_CP">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${costProcess.isOrderDone()==false}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_1idzmsq" name="Yes" sourceRef="Gateway_0dxj7oo" targetRef="Activity_CheckRelev_CP">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${costProcess.isOrderDone()==true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_NO_Sd_CP" name="No" sourceRef="Gateway_Sd_CP" targetRef="Activity_Start_PCT_CP">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="groovy">shutdown == false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_0khtpu7" sourceRef="Activity_Opti_SOpti_CP" targetRef="Gateway_0dxj7oo" />
+    <bpmn:sequenceFlow id="Flow_0rv4t7o" sourceRef="Event_Start_CP" targetRef="Activity_StartMCT_CP" />
+    <bpmn:sequenceFlow id="Flow_0u05c1g" sourceRef="Activity_Start_PCT_CP" targetRef="Activity_CheckNwOrder_CP" />
+    <bpmn:sequenceFlow id="Flow_169m2s2" sourceRef="Activity_StartMCT_CP" targetRef="Activity_Start_PCT_CP" />
+    <bpmn:sequenceFlow id="Flow_1vz1pnq" sourceRef="Activity_CheckNwOrder_CP" targetRef="Activity_CheckRelev_CP" />
+    <bpmn:sequenceFlow id="Flow_08z38je" sourceRef="Activity_CheckRelev_CP" targetRef="Activity_Opti_SOpti_CP" />
+    <bpmn:task id="Activity_CheckRelev_CP" name="Check relevance of LOG file">
+      <bpmn:incoming>Flow_1idzmsq</bpmn:incoming>
+      <bpmn:incoming>Flow_1vz1pnq</bpmn:incoming>
+      <bpmn:outgoing>Flow_08z38je</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_Opti_SOpti_CP" name="Optimize price &#38; Update Archive table">
+      <bpmn:incoming>Flow_08z38je</bpmn:incoming>
+      <bpmn:outgoing>Flow_0khtpu7</bpmn:outgoing>
+    </bpmn:task>
+  </bpmn:process>
+  <bpmn:process id="Process_MaintainCostTable" isExecutable="false">
+    <bpmn:startEvent id="Event_Start_MCT" name="Start Maintain Cost Table">
+      <bpmn:outgoing>Flow_0qjw28p</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_0njb6cs" messageRef="Message_11qoa1l" />
+    </bpmn:startEvent>
+    <bpmn:task id="Activity_CheckFactCap_MCT" name="Check Factory Capability">
+      <bpmn:incoming>Flow_0qjw28p</bpmn:incoming>
+      <bpmn:outgoing>Flow_1s3ovx0</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_CheckStation_MCT" name="Check station availability">
+      <bpmn:incoming>Flow_1o4mmx4</bpmn:incoming>
+      <bpmn:outgoing>Flow_1oeo9ew</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_06vkda3" name="Add/drop Rows in Cost Table if needed">
+      <bpmn:incoming>Flow_1oeo9ew</bpmn:incoming>
+      <bpmn:outgoing>Flow_1u4nupj</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_QueryLastPrice_PCT" name="Update Cost">
+      <bpmn:incoming>Flow_1u4nupj</bpmn:incoming>
+      <bpmn:outgoing>Flow_0gbrmyl</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="Event_End_MCT" name="End">
+      <bpmn:incoming>Flow_0gbrmyl</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:task id="Activity_02wjuqa" name="Add/drop columns in Cost Table if needed">
+      <bpmn:incoming>Flow_1s3ovx0</bpmn:incoming>
+      <bpmn:outgoing>Flow_1o4mmx4</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_0qjw28p" sourceRef="Event_Start_MCT" targetRef="Activity_CheckFactCap_MCT" />
+    <bpmn:sequenceFlow id="Flow_0gbrmyl" sourceRef="Activity_QueryLastPrice_PCT" targetRef="Event_End_MCT" />
+    <bpmn:sequenceFlow id="Flow_1o4mmx4" sourceRef="Activity_02wjuqa" targetRef="Activity_CheckStation_MCT" />
+    <bpmn:sequenceFlow id="Flow_1oeo9ew" sourceRef="Activity_CheckStation_MCT" targetRef="Activity_06vkda3" />
+    <bpmn:sequenceFlow id="Flow_1u4nupj" sourceRef="Activity_06vkda3" targetRef="Activity_QueryLastPrice_PCT" />
+    <bpmn:sequenceFlow id="Flow_1s3ovx0" sourceRef="Activity_CheckFactCap_MCT" targetRef="Activity_02wjuqa" />
+  </bpmn:process>
+  <bpmn:process id="Process_PopulateCostTable" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_07z42bd">
+      <bpmn:lane id="Lane_1nv63ov">
+        <bpmn:flowNodeRef>Event_End_PCT</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_Start_PCT</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_QueryLastPrice_NF_PCT</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:endEvent id="Event_End_PCT" name="End">
+      <bpmn:incoming>Flow_05ry7uj</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:startEvent id="Event_Start_PCT" name="Start Populate Cost Table">
+      <bpmn:outgoing>Flow_1q91ipa</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_11ni3h5" messageRef="Message_16o993t" />
+    </bpmn:startEvent>
+    <bpmn:task id="Activity_QueryLastPrice_NF_PCT" name="Update Prices in Cost Table">
+      <bpmn:incoming>Flow_1q91ipa</bpmn:incoming>
+      <bpmn:outgoing>Flow_05ry7uj</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_05ry7uj" sourceRef="Activity_QueryLastPrice_NF_PCT" targetRef="Event_End_PCT" />
+    <bpmn:sequenceFlow id="Flow_1q91ipa" sourceRef="Event_Start_PCT" targetRef="Activity_QueryLastPrice_NF_PCT" />
+  </bpmn:process>
+  <bpmn:signal id="Signal_13tvz0k" name="Shutdown" />
+  <bpmn:message id="Message_11qoa1l" name="Start_Maintain_Cost_Table" />
+  <bpmn:message id="Message_09v497e" name="Process_Cost_Process_Already_Running" />
+  <bpmn:message id="Message_16o993t" name="Start_Populate_Cost_Table" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_10633ri">
+      <bpmndi:BPMNShape id="Participant_1wvi8d5_di" bpmnElement="Participant_CP" isHorizontal="true">
+        <dc:Bounds x="160" y="260" width="690" height="390" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_08z38je_di" bpmnElement="Flow_08z38je">
+        <di:waypoint x="680" y="480" />
+        <di:waypoint x="725" y="480" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1vz1pnq_di" bpmnElement="Flow_1vz1pnq">
+        <di:waypoint x="630" y="400" />
+        <di:waypoint x="630" y="440" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_169m2s2_di" bpmnElement="Flow_169m2s2">
+        <di:waypoint x="400" y="360" />
+        <di:waypoint x="440" y="360" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0u05c1g_di" bpmnElement="Flow_0u05c1g">
+        <di:waypoint x="540" y="360" />
+        <di:waypoint x="580" y="360" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0rv4t7o_di" bpmnElement="Flow_0rv4t7o">
+        <di:waypoint x="248" y="360" />
+        <di:waypoint x="300" y="360" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0khtpu7_di" bpmnElement="Flow_0khtpu7">
+        <di:waypoint x="775" y="520" />
+        <di:waypoint x="775" y="590" />
+        <di:waypoint x="655" y="590" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_03v8pdi_di" bpmnElement="Flow_NO_Sd_CP">
+        <di:waypoint x="490" y="565" />
+        <di:waypoint x="490" y="400" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="492" y="543" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1idzmsq_di" bpmnElement="Flow_1idzmsq">
+        <di:waypoint x="630" y="565" />
+        <di:waypoint x="630" y="520" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="641" y="546" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0udljyh_di" bpmnElement="Flow_0udljyh">
+        <di:waypoint x="605" y="590" />
+        <di:waypoint x="515" y="590" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="591" y="574" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1hf5592_di" bpmnElement="Flow_YES_Sd_CP">
+        <di:waypoint x="465" y="590" />
+        <di:waypoint x="428" y="590" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="443" y="573" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Gateway_1wq49b7_di" bpmnElement="Gateway_Sd_CP" isMarkerVisible="true">
+        <dc:Bounds x="465" y="565" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="449" y="618.5" width="82" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1yfgvid_di" bpmnElement="Event_Start_CP" bioc:stroke="#43a047" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#43a047">
+        <dc:Bounds x="212" y="342" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="218" y="385" width="25" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1oi5gws_di" bpmnElement="Activity_StartMCT_CP">
+        <dc:Bounds x="300" y="320" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_06w7dvs_di" bpmnElement="Activity_Start_PCT_CP">
+        <dc:Bounds x="440" y="320" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_09q91cm_di" bpmnElement="Activity_CheckNwOrder_CP">
+        <dc:Bounds x="580" y="320" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0dxj7oo_di" bpmnElement="Gateway_0dxj7oo" isMarkerVisible="true">
+        <dc:Bounds x="605" y="565" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="598.5" y="625" width="63" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_16q7lxx_di" bpmnElement="Event_End_CP">
+        <dc:Bounds x="392" y="572" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="400" y="615" width="20" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_18cngff_di" bpmnElement="Activity_CheckRelev_CP" bioc:stroke="#000000" bioc:fill="#ffffff" color:background-color="#ffffff" color:border-color="#000000">
+        <dc:Bounds x="580" y="440" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Opti_SOpti_CP_di" bpmnElement="Activity_Opti_SOpti_CP" bioc:stroke="#000000" bioc:fill="#ffffff" color:background-color="#ffffff" color:border-color="#000000">
+        <dc:Bounds x="725" y="440" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Participant_0xljrmv_di" bpmnElement="Participant_MCT" isHorizontal="true">
+        <dc:Bounds x="160" y="670" width="690" height="250" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1s3ovx0_di" bpmnElement="Flow_1s3ovx0">
+        <di:waypoint x="370" y="770" />
+        <di:waypoint x="370" y="800" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1u4nupj_di" bpmnElement="Flow_1u4nupj">
+        <di:waypoint x="560" y="730" />
+        <di:waypoint x="610" y="730" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1oeo9ew_di" bpmnElement="Flow_1oeo9ew">
+        <di:waypoint x="510" y="800" />
+        <di:waypoint x="510" y="770" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1o4mmx4_di" bpmnElement="Flow_1o4mmx4">
+        <di:waypoint x="420" y="840" />
+        <di:waypoint x="460" y="840" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0gbrmyl_di" bpmnElement="Flow_0gbrmyl">
+        <di:waypoint x="710" y="730" />
+        <di:waypoint x="772" y="730" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0qjw28p_di" bpmnElement="Flow_0qjw28p">
+        <di:waypoint x="278" y="730" />
+        <di:waypoint x="320" y="730" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Event_0kygahm_di" bpmnElement="Event_Start_MCT">
+        <dc:Bounds x="242" y="712" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="226" y="756" width="68" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_19m0fqw_di" bpmnElement="Activity_CheckFactCap_MCT" bioc:stroke="#000000" bioc:fill="#ffffff" color:background-color="#ffffff" color:border-color="#000000">
+        <dc:Bounds x="320" y="690" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1t01s36_di" bpmnElement="Activity_CheckStation_MCT" bioc:stroke="#000000" bioc:fill="#ffffff" color:background-color="#ffffff" color:border-color="#000000">
+        <dc:Bounds x="460" y="800" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_06vkda3_di" bpmnElement="Activity_06vkda3">
+        <dc:Bounds x="460" y="690" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_157m7wv_di" bpmnElement="Activity_QueryLastPrice_PCT">
+        <dc:Bounds x="610" y="690" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_18kq12l_di" bpmnElement="Event_End_MCT">
+        <dc:Bounds x="772" y="712" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="780" y="755" width="20" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_02wjuqa_di" bpmnElement="Activity_02wjuqa">
+        <dc:Bounds x="320" y="800" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Participant_11gj5ey_di" bpmnElement="Participant_PCT" isHorizontal="true">
+        <dc:Bounds x="325" y="85" width="330" height="150" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_1nv63ov_di" bpmnElement="Lane_1nv63ov" isHorizontal="true">
+        <dc:Bounds x="355" y="85" width="300" height="150" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1q91ipa_di" bpmnElement="Flow_1q91ipa">
+        <di:waypoint x="429" y="165" />
+        <di:waypoint x="455" y="165" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_05ry7uj_di" bpmnElement="Flow_05ry7uj">
+        <di:waypoint x="555" y="165" />
+        <di:waypoint x="587" y="165" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Event_1e52xam_di" bpmnElement="Event_End_PCT">
+        <dc:Bounds x="587" y="147" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="595" y="190" width="20" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1ulqdzd_di" bpmnElement="Event_Start_PCT">
+        <dc:Bounds x="393" y="147" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="370" y="191" width="70" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_10lqgz3_di" bpmnElement="Activity_QueryLastPrice_NF_PCT">
+        <dc:Bounds x="455" y="125" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_0tq302g_di" bpmnElement="Flow_0tq302g">
+        <di:waypoint x="490" y="320" />
+        <di:waypoint x="490" y="235" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0tgvke5_di" bpmnElement="Flow_0tgvke5">
+        <di:waypoint x="350" y="400" />
+        <di:waypoint x="350" y="670" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
